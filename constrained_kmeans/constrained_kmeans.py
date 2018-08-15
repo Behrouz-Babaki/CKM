@@ -9,6 +9,14 @@ import math
 def l2_distance(point1, point2):
     return sum([(float(i)-float(j))**2 for (i,j) in zip(point1, point2)])
 
+# taken from scikit-learn (https://goo.gl/1RYPP5)
+def tolerance(tol, dataset):
+    n = len(dataset)
+    dim = len(dataset[0])
+    averages = [sum(dataset[i][d] for i in range(n))/float(n) for d in range(dim)]
+    variances = [sum((dataset[i][d]-averages[d])**2 for i in range(n))/float(n) for d in range(dim)]
+    return tol * sum(variances) / dim
+
 class subproblem(object):
     def __init__(self, centroids, 
                  data, weights, 
@@ -121,7 +129,8 @@ def compute_centers(clusters, dataset,weights=None):
     return clusters, cluster_centers
 
 def kmeans_constrained(dataset, k, weights=None, min_weight=0, max_weight=None,
-                       min_size=None, balanced=False, alpha=0.0, max_iters=999,uiter=None):
+                       min_size=None, balanced=False, alpha=0.0, max_iters=999,
+                       tol=1e-4, uiter=None):
     """
     @dataset - numpy matrix (or list of lists) - of point coordinates
     @k - number of clusters
@@ -141,8 +150,9 @@ def kmeans_constrained(dataset, k, weights=None, min_weight=0, max_weight=None,
         max_weight = sum(weights)
     uiter = uiter or list
 
+    tol = tolerance(tol, dataset)
     centers = initialize_centers(dataset, k)
-    clusters = [-1] * n
+    clusters_ = [-1] * n
 
     for ind in uiter(range(max_iters)):
         m = subproblem(centers, dataset, weights, 
@@ -151,14 +161,16 @@ def kmeans_constrained(dataset, k, weights=None, min_weight=0, max_weight=None,
         clusters_ = m.solve()
         if not clusters_:
             return None, None
-        clusters_, centers = compute_centers(clusters_, dataset)
+        clusters_, centers_ = compute_centers(clusters_, dataset)
 
-        converged = all([clusters[i]==clusters_[i] for i in range(n)])
-        clusters = clusters_
-        if converged:
-            break
+        if len(centers_) == len(centers) and len(centers) == k:
+            shift = sum(l2_distance(centers[i], centers_[i]) for i in range(k))
+            if shift <= tol:
+                break
+        
+        centers = centers_
 
-    return clusters, centers
+    return clusters_, centers_
 
 def read_data(datafile):
     data = []
@@ -210,6 +222,12 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--NUM_ITER', type=int,
                         help='run the algorithm for NUM_ITER times and return the best clustering',
                         default=1)
+    parser.add_argument('--max_iters', type=int,
+                        help='maximum number of times that the internal loop is executed',
+                        default=999)
+    parser.add_argument('--tolerance', type=float,
+                        help='the (scaled) distance between the centers in two consecutive iterations that indicates convergence',
+                        default=1e-4)                        
     parser.add_argument('-o', '--OUTFILE', help='store the result in OUTFILE',
                         default='')
     args = parser.parse_args()
@@ -224,7 +242,9 @@ if __name__ == '__main__':
                                            args.min_weight, args.max_weight,
                                            min_size=args.min_size,
                                            balanced=args.balanced,
-                                           alpha=args.alpha)
+                                           alpha=args.alpha,
+                                           max_iters=args.max_iters, 
+                                           tol=args.tolerance)
         if clusters:
             quality = compute_quality(data, clusters)
             if not best or (quality < best):

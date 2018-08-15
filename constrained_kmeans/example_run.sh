@@ -9,17 +9,12 @@
 # The total weight of points in each cluster should be at most 4
 # Run the algorithm 2 times and ouput the best clustering
 # Store the results in the file players1.out
-./constrained_kmeans.py ../data/players.data 4 ../data/players.weights -4 4 -n 2 -o players1.out
-
-
-# Add the constraint that the clusters should be balanced
-./constrained_kmeans.py ../data/players.data 4 ../data/players.weights -4 4 -n 2 --balanced -o players2.out
-
 
 # Relax the balance constraint by an alpha threshold
-./constrained_kmeans.py ../data/players.data 4 ../data/players.weights -4 4 -n 2 --balanced --alpha 0.1 -o players3.out
+# The inner loop is not executed more than 100 times
+# The algorithm converges if the sum of distances between previous and current centers is less than 1e-3 (scaled to the dimensions of the dataset)
+./constrained_kmeans.py ../data/players.data 4 ../data/players.weights -4 4 -n 2 --balanced --alpha 0.1 --max_iters 100 --tolerance 1e-3 -o players3.out
 
-# Instead of using the balance constraint, require the clusters to have a minimum size
-./constrained_kmeans.py ../data/players.data 4 ../data/players.weights -4 4 -n 2 --min_size 3 -o players4.out
+
 
 
