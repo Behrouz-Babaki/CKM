@@ -23,6 +23,11 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Random;
 
+import assignment.AssignmentSolver;
+import assignment.SimpleAssignment;
+import java.io.File;
+
+
 public class KMeans {
 
 	/***********************************************************************
@@ -53,6 +58,8 @@ public class KMeans {
 	private long start;
 	private long end;
 
+	private AssignmentSolver solver;
+
 	/***********************************************************************
 	 * Constructors
 	 **********************************************************************/
@@ -82,6 +89,7 @@ public class KMeans {
 		epsilon = builder.epsilon;
 		useEpsilon = builder.useEpsilon;
 		L1norm = builder.L1norm;
+		solver = builder.solver;
 
 		// get dimensions to set last 2 fields
 		m = points.length;
@@ -109,6 +117,7 @@ public class KMeans {
 		private double epsilon = .001;
 		private boolean useEpsilon = true;
 		private boolean L1norm = true;
+		private AssignmentSolver solver = null;
 
 		/**
 		 * Sets required parameters and checks that are a sufficient # of distinct
@@ -146,6 +155,11 @@ public class KMeans {
 			if (iterations < 1)
 				throw new IllegalArgumentException("Required: non-negative number of iterations. Ex: 50");
 			this.iterations = iterations;
+			return this;
+		}
+
+		public Builder solver(AssignmentSolver solver) {
+			this.solver = solver;
 			return this;
 		}
 
@@ -245,26 +259,7 @@ public class KMeans {
 	 * Assigns to each data point the nearest centroid.
 	 */
 	private void assignmentStep() {
-		assignment = new int[m];
-
-		double tempDist;
-		double minValue;
-		int minLocation;
-
-		for (int i = 0; i < m; i++) {
-			minLocation = 0;
-			minValue = Double.POSITIVE_INFINITY;
-			for (int j = 0; j < k; j++) {
-				tempDist = distance(points[i], centroids[j]);
-				if (tempDist < minValue) {
-					minValue = tempDist;
-					minLocation = j;
-				}
-			}
-
-			assignment[i] = minLocation;
-		}
-
+		assignment = solver.assignmentStep(points, centroids);
 	}
 
 	/**
@@ -468,7 +463,7 @@ public class KMeans {
 		return L1norm ? Distance.L1(x, y) : Distance.L2(x, y);
 	}
 
-	private static class Distance {
+	public static class Distance {
 
 		/**
 		 * L1 norm: distance(X,Y) = sum_i=1:n[|x_i - y_i|]
@@ -551,16 +546,14 @@ public class KMeans {
 		if (args.length != 2) {
 			System.out.println("usage: KMeans FILE #CLUSTERS");
 		}
-		// the test data is four 750-point Gaussian clusters (3000 points in all)
-		// created around the vertices of the unit square
+
 		String dataFile = args[0];
 		int k = Integer.parseInt(args[1]);
-		double[][] points = CSVreader.read(dataFile);
+		double[][] points = CSVreader.read(new File(dataFile));
 
 		// run K-means
 		final long startTime = System.currentTimeMillis();
-		KMeans clustering = new KMeans.Builder(k, points).iterations(50).pp(true).epsilon(.001).useEpsilon(true)
-				.build();
+		KMeans clustering = new KMeans.Builder(k, points).iterations(50).pp(true).epsilon(.001).useEpsilon(true).solver(new SimpleAssignment()).build();
 		final long endTime = System.currentTimeMillis();
 
 		// print timing information

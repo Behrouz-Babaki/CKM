@@ -5,6 +5,7 @@
  ************************************************************************/
 package cluster;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -16,7 +17,7 @@ public class CSVreader {
 	/**
 	 * Reads double[][] from csv file
 	 */
-	public static double[][] read(String inFile) {
+	public static double[][] read(File inFile) {
 
 		BufferedReader bf = null;
 		ArrayList<ArrayList<Double>> data = new ArrayList<ArrayList<Double>>();
@@ -63,34 +64,16 @@ public class CSVreader {
 				arr[i][j] = data.get(i).get(j);
 		return arr;
 	}
-
-	public static void main(String[] args) {
-		String testFile = null;
-		boolean print = false;
-
-		// read user's configurations for test
-		if (args.length == 2) {
-			testFile = args[0];
-			print = Boolean.parseBoolean(args[1]);
-		}
-
-		// default test case
-		else
-		{
-			System.out.println("usage: CSVreader FILE DOPRINT");
-			System.exit(1);
-		}
-
-		double[][] test = CSVreader.read(testFile);
-
-		if (print) {
-			for (int i = 0; i < test.length; i++) {
-				for (int j = 0; j < test[0].length; j++)
-					System.out.print(test[i][j] + " ");
-				System.out.println();
-			}
-		}
-
-		System.out.println("Read " + testFile + " successfully!");
+	
+	public static double[] flatten(double[][] arr2d) {
+		int rows = arr2d.length;
+		if (arr2d[0].length > 1)
+			throw new IllegalArgumentException("Each entry should be an array with size one");
+		
+		double[] arr = new double[rows];
+		for (int i=0; i<rows; i++)
+			arr[i] = arr2d[i][0];
+		
+		return arr;
 	}
 }
