@@ -11,7 +11,7 @@ object Run extends App {
       case "KM"   => cluster.KMeans.main(arguments)
       case "CL"   => cluster.Runner.main(arguments)
       case "test" => cluster.Runner.main(tArgs)
-      case "sandbox" => sandbox.Assign.main(arguments)
+      case "assign" => assignment.TestAssign.main(arguments)
       case _      => printUsage
     }
   } catch {
