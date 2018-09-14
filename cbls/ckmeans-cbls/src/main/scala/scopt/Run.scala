@@ -9,8 +9,6 @@ object Run extends App {
     val arguments = args.drop(1)
     choice match {
       case "KM"   => cluster.KMeans.main(arguments)
-      case "NQ"   => example.NQueensEasy.main(arguments)
-      case "WL"   => example.WarehouseLocation.main(arguments)
       case "CL"   => cluster.Runner.main(arguments)
       case "test" => cluster.Runner.main(tArgs)
       case "sandbox" => sandbox.Assign.main(arguments)

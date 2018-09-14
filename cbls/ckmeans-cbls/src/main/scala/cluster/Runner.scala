@@ -10,13 +10,11 @@ case class Config(
   k:             Int     = -1,
   minWeight:     Double  = Double.NegativeInfinity,
   maxWeight:     Double  = Double.PositiveInfinity,
-  balanced:      Boolean = false,
-  maxSizeDiff:   Int     = Int.MaxValue,
-  alpha:         Double  = 0.0,
   numRepeats:    Int     = 1,
   maxIterations: Int     = 999,
   tolerance:     Double  = 1e-4,
   minSize:       Int     = -1,
+  maxSize:       Int     = Int.MaxValue,
   outputFile:    File    = new File("."))
 
 object Runner extends App {
@@ -30,13 +28,17 @@ object Runner extends App {
 
       var solver: AssignmentSolver = config.algorithm match {
         case "simple" => new SimpleAssignment
-        case "cbls" => new CBLSAssignment
+        case "cbls"   => new CBLSAssignment
       }
-      
+
       // read the data and weights
       val points = CSVreader.read(config.dataFile)
-      val weights = CSVreader.flatten(CSVreader.read(config.weightFile))
       
+      val WSCALE = 100
+      val weights = CSVreader.flatten(CSVreader.read(config.weightFile)).map(i => (i * WSCALE).toInt)
+      val minWeight = (config.minWeight * WSCALE).toInt
+      val maxWeight = (config.maxWeight * WSCALE).toInt
+
       // run K-means
       val startTime = System.currentTimeMillis
       val clustering: KMeans = new KMeans.Builder(config.k, points).iterations(50).pp(true).epsilon(.001).useEpsilon(true).solver(new SimpleAssignment()).build();
@@ -100,15 +102,11 @@ object Runner extends App {
         if (x >= 0) success else failure("value <min-size> must be >= 0")
       } text ("minimum number of instances in each cluster")
 
-      opt[Int]("max-size-difference") optional () valueName ("<difference>") action { (x, c) =>
-        c.copy(maxSizeDiff = x)
+      opt[Int]("max-size") optional () valueName ("<#instances>") action { (x, c) =>
+        c.copy(maxSize = x)
       } validate { x =>
-        if (x >= 0) success else failure("value <difference> must be >= 0")
-      } text ("maximum difference between the size of clusters")
-
-      opt[Double]("alpha") optional () valueName ("<a>") action { (x, c) =>
-        c.copy(alpha = x)
-      } text ("the degree of acceptable imbalance")
+        if (x >= 0) success else failure("value <max-size> must be >= 0")
+      } text ("maximum number of instances in each cluster")
 
       opt[Int]("num-repeats") optional () valueName ("<n>") action { (x, c) =>
         c.copy(numRepeats = x)
