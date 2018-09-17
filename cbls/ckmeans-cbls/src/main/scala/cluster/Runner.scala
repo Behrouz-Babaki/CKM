@@ -4,18 +4,18 @@ import java.io.File
 import assignment._
 
 case class Config(
-  algorithm:     String  = "simple",
-  dataFile:      File    = new File("."),
-  weightFile:    File    = new File("."),
-  k:             Int     = -1,
-  minWeight:     Double  = Double.NegativeInfinity,
-  maxWeight:     Double  = Double.PositiveInfinity,
-  numRepeats:    Int     = 1,
-  maxIterations: Int     = 999,
-  tolerance:     Double  = 1e-4,
-  minSize:       Int     = -1,
-  maxSize:       Int     = Int.MaxValue,
-  outputFile:    File    = new File("."))
+  dataFile:      File   = new File("."),
+  weightFile:    File   = new File("."),
+  k:             Int    = -1,
+  minWeight:     Double = Double.NegativeInfinity,
+  maxWeight:     Double = Double.PositiveInfinity,
+  numRepeats:    Int    = 1,
+  maxIterations: Int    = 999,
+  epsilon:       Double = 1e-3,
+  minSize:       Int    = -1,
+  maxSize:       Int    = Int.MaxValue,
+  outputFile:    File   = new File("."),
+  verbosity:     Int    = 0)
 
 object Runner extends App {
 
@@ -26,39 +26,32 @@ object Runner extends App {
       System.err.println("Start CKMeans on " + config.dataFile.getAbsolutePath +
         " and " + config.weightFile.getAbsolutePath)
 
-      var solver: AssignmentSolver = config.algorithm match {
-        case "simple" => new SimpleAssignment
-        case "cbls"   => new CBLSAssignment
-      }
-
       // read the data and weights
       val points = CSVreader.read(config.dataFile)
-      
-      val WSCALE = 100
-      val weights = CSVreader.flatten(CSVreader.read(config.weightFile)).map(i => (i * WSCALE).toInt)
-      val minWeight = (config.minWeight * WSCALE).toInt
-      val maxWeight = (config.maxWeight * WSCALE).toInt
+      val weights = CSVreader.flatten(CSVreader.read(config.weightFile))
 
       // run K-means
       val startTime = System.currentTimeMillis
-      val clustering: KMeans = new KMeans.Builder(config.k, points).iterations(50).pp(true).epsilon(.001).useEpsilon(true).solver(new SimpleAssignment()).build();
+      println("running CKmeans")
+      CKMeans.cluster(points, weights, config.k,
+        config.minWeight, config.maxWeight,
+        config.minSize, config.maxSize,
+        config.epsilon, config.outputFile,
+        config.numRepeats, config.verbosity)
       val elapsed = System.currentTimeMillis - startTime
 
       System.out.println("Clustering took " + elapsed.toDouble / 1000 + " seconds");
       System.out.println();
 
       // get output
-      val centroids = clustering.getCentroids();
-      val WCSS = clustering.getWCSS();
-      // int[] assignment = kmean.getAssignment();
+      val centroids = CKMeans.centroids
 
       // print output
       for (i <- 0 until config.k)
         System.out.println("(" + centroids(i)(0) + ", " + centroids(i)(1) + ")");
       System.out.println();
-
-      System.out.println("The within-cluster sum-of-squares (WCSS) = " + WCSS);
-      System.out.println();
+      
+      println("UNSAT?: " + CKMeans.unsatisfiable)
 
     case None =>
   }
@@ -66,11 +59,6 @@ object Runner extends App {
   def argsParser(): scopt.OptionParser[Config] = {
     new scopt.OptionParser[Config]("CKMeans") {
       head("CKMeans", "0.2")
-
-      opt[String]("method") required () valueName ("<algorithm>") action { (x, c) => c.copy(algorithm = x)
-      } validate { x =>
-        if (List("simple", "cbls") contains x) success else failure("unknown <algorithm>")
-      } text ("the algorithm for solving the assignment subproblem")
 
       opt[File]("data-file") required () valueName ("<file>") action { (x, c) => c.copy(dataFile = x)
       } validate { x =>
@@ -117,7 +105,7 @@ object Runner extends App {
       } text ("maximum number of iterations of the main loop")
 
       opt[Double]("tolerance") optional () action { (x, c) =>
-        c.copy(tolerance = x)
+        c.copy(epsilon = x)
       } text ("the (scaled) distance between the centers in two consecutive iterations that indicates convergence")
 
       opt[File]("output-file") optional () valueName ("<OUTFILE>") action { (x, c) =>
@@ -125,6 +113,10 @@ object Runner extends App {
       } validate { x =>
         if (x.exists() || x.createNewFile()) success else failure("<OUTFILE> can not be created")
       } text ("store the result in OUTFILE")
+
+      opt[Int]("verbosity") optional () valueName ("<VERBOSITY>") action { (x, c) =>
+        c.copy(verbosity = x)
+      } text ("set versbosity level to <VERBOSITY>")
 
       help("help") text ("Usage of CKMeans")
 
