@@ -9,8 +9,6 @@ class CPAssignmentSolver(n: Int, k: Int, weights: Array[Int],
                          distances: Array[Array[Int]], previousAssignments: Array[Int],
                          verbosity: Int = 0) extends CPModel {
 
-  var result: assignmentResult = null
-
   val assignmentVariables = Array.fill(n)(CPIntVar(0 until k))
   
   val clusterWeightVariables = Array.fill(k)(CPIntVar(minClusterWeight to maxClusterWeight))
@@ -26,11 +24,12 @@ class CPAssignmentSolver(n: Int, k: Int, weights: Array[Int],
     add(minAssignment(assignmentVariables, distances, CPIntVar(ub-1)))
   }
 
-  val assignments = Array.ofDim[Int](n)
+  var assignments: Array[Int] = null
   search {
     binaryFirstFail(assignmentVariables)
   } onSolution {
     println("solution found")
+    assignments = Array.ofDim[Int](n)
     for (i <- 0 until n)
       assignments(i) = assignmentVariables(i).value
   }
@@ -38,5 +37,4 @@ class CPAssignmentSolver(n: Int, k: Int, weights: Array[Int],
   val stats = start(nSols = 1)
   val hasImproved = (stats.nSols > 0)
   
-  result = assignmentResult(assignments, 0, hasImproved)
 }

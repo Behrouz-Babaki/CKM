@@ -27,17 +27,27 @@ object Runner extends App {
         " and " + config.weightFile.getAbsolutePath)
 
       // read the data and weights
-      val points = CSVreader.read(config.dataFile)
-      val weights = CSVreader.flatten(CSVreader.read(config.weightFile))
+      val points = CsvIo.read(config.dataFile)
+      val weights = CsvIo.flatten(CsvIo.read(config.weightFile))
+      
+      val minSize = {if (config.minSize >= 0) config.minSize else 0}
+      val maxSize = {if (config.minSize < Int.MaxValue) config.maxSize else points.length}
+      val minWeight = {if (config.minWeight != Double.NegativeInfinity) config.minWeight else weights.filter(_ < 0).reduce(_ + _)}
+      val maxWeight = {if (config.maxWeight != Double.PositiveInfinity) config.maxWeight else weights.filter(_ > 0).reduce(_ + _)}
 
       // run K-means
       val startTime = System.currentTimeMillis
       println("running CKmeans")
+      println(config.verbosity)
       CKMeans.cluster(points, weights, config.k,
-        config.minWeight, config.maxWeight,
-        config.minSize, config.maxSize,
-        config.epsilon, config.outputFile,
-        config.numRepeats, config.verbosity)
+        minWeight = minWeight,
+        maxWeight = maxWeight,
+        minSize = minSize,
+        maxSize = maxSize,
+        epsilon = config.epsilon,
+        outFile = config.outputFile,
+        repeats = config.numRepeats,
+        verbosity = config.verbosity)
       val elapsed = System.currentTimeMillis - startTime
 
       System.out.println("Clustering took " + elapsed.toDouble / 1000 + " seconds");
@@ -50,7 +60,7 @@ object Runner extends App {
       for (i <- 0 until config.k)
         System.out.println("(" + centroids(i)(0) + ", " + centroids(i)(1) + ")");
       System.out.println();
-      
+
       println("UNSAT?: " + CKMeans.unsatisfiable)
 
     case None =>

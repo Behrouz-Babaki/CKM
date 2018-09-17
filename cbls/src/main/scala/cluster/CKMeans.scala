@@ -1,6 +1,6 @@
 package cluster
 
-import assignment.OscarAssignmentSolver
+import assignment.AssignmentSolver
 import scala.util.Random
 import java.io.File
 
@@ -36,17 +36,15 @@ object CKMeans extends App {
     m = points(0).length
     k = _k
 
-    val solver = new OscarAssignmentSolver(points, n, k, weights,
+    val solver = new AssignmentSolver(points, n, k, weights,
       minSize, maxSize,
       minWeight, maxWeight,
-      verbosity)
+      verbosity = verbosity)
 
     // run multiple times and then choose the best run
     for (_ <- 0 until repeats) {
       cluster
 
-      //FIXME take the feasibility into account
-      // store info if it was the best run so far
       if (WCSS < bestWCSS) {
         bestWCSS = WCSS;
         bestCentroids = centroids;
@@ -54,7 +52,7 @@ object CKMeans extends App {
       }
     }
 
-    def cluster(): Unit = {
+    def cluster(): Unit = {      
       initialize
 
       if (!unsatisfiable) {
@@ -62,17 +60,15 @@ object CKMeans extends App {
         var done = false
         do {
           val result = solver.assignmentStep(centroids, assignment)
-          println(result.violations + " -- " + result.hasImproved)
-          if (result.violations == 0 && result.hasImproved) {
-            assignment = result.assignments
+          if (result != null) {
+            assignment = result
             prevWCSS = WCSS
             updateStep
-
-            println(WCSS + " :: " + prevWCSS + " :: " + (1 - (WCSS / prevWCSS)))
+            println(WCSS + " :: " + prevWCSS + " :: " + (1 - (WCSS / prevWCSS)) + " :: " + epsilon)
           } else {
             done = true
           }
-        } while (!done && (epsilon > 1 - (WCSS / prevWCSS)));
+        } while (!done && (epsilon < 1 - (WCSS / prevWCSS)));
       }
 
       if (outFile != null)
@@ -81,11 +77,10 @@ object CKMeans extends App {
 
     def initialize(): Unit = {
       plusplus
-      val result = solver.assignmentStep(centroids, null)
-      if (result.violations != 0)
+      assignment = solver.assignmentStep(centroids, null)
+      if (assignment == null)
         unsatisfiable = true
       else {
-        assignment = result.assignments
         updateStep
       }
       println(assignment.mkString(","))

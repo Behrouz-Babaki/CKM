@@ -5,12 +5,14 @@ import oscar.cbls.core.objective.Objective
 import oscar.cbls.modeling.CBLSModel
 import oscar.cbls.core.computation.CBLSIntVar
 
-class CBLSAssignmentSolver(n: Int, k: Int, weights: Array[Int],
+case class CblsResult(assignments: Array[Int], violations: Int, hasImproved: Boolean)
+
+class CblsAssignmentSolver(n: Int, k: Int, weights: Array[Int],
                            minClusterSize: Int, maxClusterSize: Int,
                            minClusterWeight: Int, maxClusterWeight: Int,
                            verbosity: Int = 0) extends CBLSModel {
 
-  def solve(distances: Array[Array[Int]], previousAssignments: Array[Int]): assignmentResult = {
+  def solve(distances: Array[Array[Int]], previousAssignments: Array[Int]): CblsResult = {
 
     val assignmentVariables: Array[CBLSIntVar] = Array.ofDim[CBLSIntVar](n)
 
@@ -66,7 +68,7 @@ class CBLSAssignmentSolver(n: Int, k: Int, weights: Array[Int],
         (sumOfDistances.value < distances.zipWithIndex.map(l => l._1(previousAssignments(l._2))).reduce(_ + _))
     }
 
-    assignmentResult(assignments, violation, hasImproved)
+    CblsResult(assignments, violation, hasImproved)
   }
 
 }
