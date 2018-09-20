@@ -1,5 +1,7 @@
 import Dependencies._
 
+val runner = "cluster.Runner"
+
 lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
@@ -15,9 +17,9 @@ lazy val root = (project in file(".")).
     libraryDependencies += "oscar" %% "oscar-algo" % "4.1.0-SNAPSHOT" withSources(),
     libraryDependencies += "oscar" %% "oscar-util" % "4.1.0-SNAPSHOT" withSources(),
     libraryDependencies += scalaTest % Test,
-    mainClass in (Compile, packageBin) := Some("scopt.Run"),
-    mainClass in (Compile, run) := Some("scopt.Run"),
-    mainClass in assembly := Some("scopt.Run"),
+    mainClass in (Compile, packageBin) := Some(runner),
+    mainClass in (Compile, run) := Some(runner),
+    mainClass in assembly := Some(runner),
     assemblyMergeStrategy in assembly := {
       case x if x.endsWith(".class") => MergeStrategy.first
       case x =>

@@ -71,7 +71,7 @@ public class MipAssignmentSolver {
 				for (int i = 0; i < n; i++)
 					ub += distances[i][previousAssignments[i]];
 				ub -= 1e-3;
-				System.out.println("ub: " + ub);
+				System.out.println("maximum accepted quality for the clustering: " + ub);
 				expr = new GRBLinExpr();
 				for (int i = 0; i < n; i++)
 					for (int j = 0; j < k; j++)

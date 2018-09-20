@@ -1,5 +1,4 @@
 #!/bin/bash
 
-sbt "run CL --method simple --data-file ../../data/players.data --k 3 --weight-file ../../data/players.weights --min-weight -10 --max-weight 1000"
+java -jar target/scala-2.12/CKmeans-CLBS-assembly-0.1.jar --data-file ../data/medium.data --k 15 --weight-file ../data/medium.weights --min-weight -5 --max-weight 5 --min-size 2 --output-file ../data/medium.out --verbosity 1
 
-#sbt "run KM ../../data/players.data 3"

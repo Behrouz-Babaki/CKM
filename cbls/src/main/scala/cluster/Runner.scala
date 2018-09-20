@@ -53,16 +53,6 @@ object Runner extends App {
       System.out.println("Clustering took " + elapsed.toDouble / 1000 + " seconds");
       System.out.println();
 
-      // get output
-      val centroids = CKMeans.centroids
-
-      // print output
-      for (i <- 0 until config.k)
-        System.out.println("(" + centroids(i)(0) + ", " + centroids(i)(1) + ")");
-      System.out.println();
-
-      println("UNSAT?: " + CKMeans.unsatisfiable)
-
     case None =>
   }
 

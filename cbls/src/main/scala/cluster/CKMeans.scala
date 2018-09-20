@@ -3,6 +3,7 @@ package cluster
 import assignment.AssignmentSolver
 import scala.util.Random
 import java.io.File
+import oscar.util.OutFile
 
 object CKMeans extends App {
 
@@ -17,18 +18,20 @@ object CKMeans extends App {
   var bestCentroids = Array.ofDim[Double](k, m)
   var bestAssignment = Array.ofDim[Int](n)
   var verbosity: Int = 0
+  
+  def verbprint(i: Int, j: Any) = {if (this.verbosity >= i) println(j)}
 
   def cluster(
-    _points:    Array[Array[Double]],
-    weights:    Array[Double],
-    _k:         Int,
-    minWeight:  Double               = Double.NegativeInfinity,
-    maxWeight:  Double               = Double.PositiveInfinity,
-    minSize:    Int                  = Int.MinValue,
-    maxSize:    Int                  = Int.MaxValue,
-    epsilon:    Double               = 1e-3,
-    outFile:    File                 = null,
-    repeats:    Int                  = 1,
+    _points:   Array[Array[Double]],
+    weights:   Array[Double],
+    _k:        Int,
+    minWeight: Double               = Double.NegativeInfinity,
+    maxWeight: Double               = Double.PositiveInfinity,
+    minSize:   Int                  = Int.MinValue,
+    maxSize:   Int                  = Int.MaxValue,
+    epsilon:   Double               = 1e-3,
+    outFile:   File                 = null,
+    repeats:   Int                  = 1,
     verbosity: Int                  = 0): Unit = {
 
     points = _points
@@ -68,25 +71,31 @@ object CKMeans extends App {
         if (currentAssignment != null) {
           assignment = currentAssignment
           centroids = updateCentroids(assignment)
-          println(assignment.mkString(","))
-        } else
+          verbprint(2, "cluster assignements:" + assignment.mkString(","))
+        } else {
+          verbprint(1, "no clustering found in this iteration. terminating.")
           done = true
+        }
       }
 
       if (outFile != null)
-        printResults
+        printResults(outFile)
     }
 
     def initialize(): Unit = {
       randomCentroids
+      verbprint(1, "finding the first set of assignments")
       assignment = solver.assignmentStep(centroids, null)
-      if (assignment == null)
+      if (assignment == null) {
         unsatisfiable = true
+        verbprint(1, "This problem is unsatisfiable!")
+      }
       else
         centroids = updateCentroids(assignment)
     }
 
     def updateCentroids(a: Array[Int]): Array[Array[Double]] = {
+      verbprint(2, "calculating the new centroids")
       val newCentroids = Array.ofDim[Double](k, m)
 
       for (i <- 0 until k)
@@ -120,6 +129,7 @@ object CKMeans extends App {
   }
 
   def randomCentroids(): Unit = {
+    verbprint(2, "randomly selecting the first set of centroids")
     centroids = Array.ofDim[Double](k, m)
     val selectedPoints = Random.shuffle(points.toList).take(k)
     for (i <- 0 until k)
@@ -168,8 +178,8 @@ object CKMeans extends App {
     }
   }
 
-  def printResults(): Unit = {
-    //TODO write results to an output file
+  def printResults(outFile: File): Unit = {
+    CsvIo.write(outFile.getAbsolutePath, assignment)
   }
 
 }

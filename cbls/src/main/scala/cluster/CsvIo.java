@@ -86,6 +86,13 @@ public class CsvIo {
 		out.close();
 	}
 
+	public static void write(String outFile, int[] arr) throws FileNotFoundException {
+		PrintStream out = new PrintStream(new FileOutputStream(outFile));
+		for (int r = 0; r < arr.length; r++)
+			out.println(arr[r]);
+		out.close();
+	}
+
 	public static double[] flatten(double[][] arr2d) {
 		int rows = arr2d.length;
 		if (arr2d[0].length > 1)
