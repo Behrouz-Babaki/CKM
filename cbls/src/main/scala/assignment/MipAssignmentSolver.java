@@ -9,8 +9,6 @@ import gurobi.GRBVar;
 
 public class MipAssignmentSolver {
 
-	public Boolean hasImproved = false;
-	public int[] assignments = null;
 	int n;
 	int k;
 	double[] weights;
@@ -30,10 +28,12 @@ public class MipAssignmentSolver {
 		this.maxClusterWeight = maxClusterWeight;
 	}
 
-	public void solve(double[][] distances, int[] previousAssignments) {
+	public int[] solve(double[][] distances, int[] previousAssignments) {
+		int[] assignments = null;
 		try {
-			GRBEnv env = new GRBEnv("cluster");
+			GRBEnv env = new GRBEnv();
 			GRBModel model = new GRBModel(env);
+			model.set(GRB.IntParam.OutputFlag, 0);
 
 			GRBVar[][] x = new GRBVar[n][k];
 
@@ -70,6 +70,7 @@ public class MipAssignmentSolver {
 				double ub = 0;
 				for (int i = 0; i < n; i++)
 					ub += distances[i][previousAssignments[i]];
+				ub -= 1e-3;
 				System.out.println("ub: " + ub);
 				expr = new GRBLinExpr();
 				for (int i = 0; i < n; i++)
@@ -82,7 +83,6 @@ public class MipAssignmentSolver {
 			model.optimize();
 
 			if (model.get(GRB.IntAttr.Status) == GRB.Status.OPTIMAL) {
-				hasImproved = true;
 				assignments = new int[n];
 				for (int i = 0; i < n; i++) {
 					for (int j = 0; j < k; j++)
@@ -99,6 +99,7 @@ public class MipAssignmentSolver {
 		} catch (GRBException e) {
 			System.out.println("Error code: " + e.getErrorCode() + ". " + e.getMessage());
 		}
+		return assignments;
 	}
 
 }

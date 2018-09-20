@@ -22,9 +22,6 @@ class AssignmentSolver(
     centroids:           Array[Array[Double]],
     previousAssignments: Array[Int]): Array[Int] = {
 
-    if (verbosity > 0)
-      println("assignment solver called")
-
     val distances: Array[Array[Double]] = Array.ofDim[Double](n, k)
     val distancesInt: Array[Array[Int]] = Array.ofDim[Int](n, k)
     for (i <- 0 until n)
@@ -33,27 +30,36 @@ class AssignmentSolver(
         distancesInt(i)(j) = (distances(i)(j) * distanceScalingFactor).toInt
       }
 
+    def computeQuality(a: Array[Int]): Double = {
+      if (a == null) Double.PositiveInfinity
+      else (0 until n).map(i => distances(i)(a(i))).sum
+    }
+
+    val previousQuality = computeQuality(previousAssignments)
+    def improvedQuality(a: Array[Int]): Boolean = {
+      (a != null) && (previousAssignments == null || computeQuality(a) < previousQuality)
+    }
+
     val CblsSolver = new CblsAssignmentSolver(n, k, weightsInt,
       minClusterSize, maxClusterSize, minWeightInt, maxWeightInt, verbosity)
 
-    if (verbosity > 0)
-      println("calling CBLS solver")
-    val cResult = CblsSolver.solve(distancesInt, previousAssignments)
-
-    if (cResult.violations == 0 && cResult.hasImproved)
-      cResult.assignments
-    else {
-      if (verbosity > 0) {
-        println("CBLS failed. Calling Gurobi")
-        Console.flush
-      }
-
-      val mipSolver = new MipAssignmentSolver(n, k, weights.map(_.toDouble),
-        minClusterSize, maxClusterSize,
-        minClusterWeight, maxClusterWeight)
-      mipSolver.solve(distances, previousAssignments)
-
-      mipSolver.assignments
+    var currentAssignments: Array[Int] = null
+    val cblsAssignments = CblsSolver.solve(distancesInt, previousAssignments)
+    if (cblsAssignments != null)
+      println("CBLS found solution!")
+    if (improvedQuality(cblsAssignments)) {
+      currentAssignments = cblsAssignments
+      println("CBLS SUCCEEDED")
     }
+    else {
+      println("CBLS FAILED")
+      val mipSolver = new MipAssignmentSolver(n, k, weights,
+        minClusterSize, maxClusterSize, minClusterWeight, maxClusterWeight)
+      val mipAssignments = mipSolver.solve(distances, previousAssignments)
+      if (improvedQuality(mipAssignments))
+        currentAssignments = mipAssignments
+    }
+    
+    currentAssignments
   }
 }

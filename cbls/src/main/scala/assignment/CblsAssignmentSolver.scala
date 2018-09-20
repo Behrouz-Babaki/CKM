@@ -5,14 +5,12 @@ import oscar.cbls.core.objective.Objective
 import oscar.cbls.modeling.CBLSModel
 import oscar.cbls.core.computation.CBLSIntVar
 
-case class CblsResult(assignments: Array[Int], violations: Int, hasImproved: Boolean)
-
 class CblsAssignmentSolver(n: Int, k: Int, weights: Array[Int],
                            minClusterSize: Int, maxClusterSize: Int,
                            minClusterWeight: Int, maxClusterWeight: Int,
                            verbosity: Int = 0) extends CBLSModel {
 
-  def solve(distances: Array[Array[Int]], previousAssignments: Array[Int]): CblsResult = {
+  def solve(distances: Array[Array[Int]], previousAssignments: Array[Int]): Array[Int] = {
 
     val assignmentVariables: Array[CBLSIntVar] = Array.ofDim[CBLSIntVar](n)
 
@@ -40,8 +38,8 @@ class CblsAssignmentSolver(n: Int, k: Int, weights: Array[Int],
     }
     c.close()
 
-    val maximumSumOfDistances = distances.map(l => l.zipWithIndex.max._1).reduce(_ + _)
-    val penalty = (maximumSumOfDistances + 1) * c.violation
+    val maximumSumOfDistances = distances.map(l => l.zipWithIndex.max._1).sum
+    val penalty = (maximumSumOfDistances / 1e4).toInt * c.violation
 
     val distanceToSelectedCenters = Array.tabulate(n)(l => constantIntElement(assignmentVariables(l), distances(l)))
     val sumOfDistances = sum(distanceToSelectedCenters)
@@ -61,14 +59,9 @@ class CblsAssignmentSolver(n: Int, k: Int, weights: Array[Int],
     val assignments = Array.tabulate(n)(l => assignmentVariables(l).value)
     val violation = c.violation.value
 
-    val hasImproved = {
-      if (previousAssignments == null)
-        true
-      else
-        (sumOfDistances.value < distances.zipWithIndex.map(l => l._1(previousAssignments(l._2))).reduce(_ + _))
-    }
-
-    CblsResult(assignments, violation, hasImproved)
+    val result: Array[Int] = {if (violation == 0) assignments else null}
+    
+    result
   }
 
 }

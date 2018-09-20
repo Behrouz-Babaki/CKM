@@ -12,29 +12,30 @@ object CKMeans extends App {
   var n = 0
   var m = 0
   var k = 0
-  var WCSS = Double.PositiveInfinity
   var unsatisfiable = false
   var bestWCSS = Double.PositiveInfinity
   var bestCentroids = Array.ofDim[Double](k, m)
   var bestAssignment = Array.ofDim[Int](n)
+  var verbosity: Int = 0
 
   def cluster(
-    _points:   Array[Array[Double]],
-    weights:   Array[Double],
-    _k:        Int,
-    minWeight: Double               = Double.NegativeInfinity,
-    maxWeight: Double               = Double.PositiveInfinity,
-    minSize:   Int                  = Int.MinValue,
-    maxSize:   Int                  = Int.MaxValue,
-    epsilon:   Double               = 1e-3,
-    outFile:   File                 = null,
-    repeats:   Int                  = 1,
+    _points:    Array[Array[Double]],
+    weights:    Array[Double],
+    _k:         Int,
+    minWeight:  Double               = Double.NegativeInfinity,
+    maxWeight:  Double               = Double.PositiveInfinity,
+    minSize:    Int                  = Int.MinValue,
+    maxSize:    Int                  = Int.MaxValue,
+    epsilon:    Double               = 1e-3,
+    outFile:    File                 = null,
+    repeats:    Int                  = 1,
     verbosity: Int                  = 0): Unit = {
 
     points = _points
     n = points.length
     m = points(0).length
     k = _k
+    this.verbosity = verbosity
 
     val solver = new AssignmentSolver(points, n, k, weights,
       minSize, maxSize,
@@ -45,6 +46,11 @@ object CKMeans extends App {
     for (_ <- 0 until repeats) {
       cluster
 
+      val WCSS: Double = {
+        if (unsatisfiable) Double.PositiveInfinity
+        else (0 until n).map(i => l2Distance(points(i), centroids(assignment(i)))).sum
+      }
+
       if (WCSS < bestWCSS) {
         bestWCSS = WCSS;
         bestCentroids = centroids;
@@ -52,23 +58,19 @@ object CKMeans extends App {
       }
     }
 
-    def cluster(): Unit = {      
+    def cluster(): Unit = {
+      unsatisfiable = false
       initialize
 
-      if (!unsatisfiable) {
-        var prevWCSS: Double = 0
-        var done = false
-        do {
-          val result = solver.assignmentStep(centroids, assignment)
-          if (result != null) {
-            assignment = result
-            prevWCSS = WCSS
-            updateStep
-            println(WCSS + " :: " + prevWCSS + " :: " + (1 - (WCSS / prevWCSS)) + " :: " + epsilon)
-          } else {
-            done = true
-          }
-        } while (!done && (epsilon < 1 - (WCSS / prevWCSS)));
+      var done = unsatisfiable
+      while (!done) {
+        val currentAssignment = solver.assignmentStep(centroids, assignment)
+        if (currentAssignment != null) {
+          assignment = currentAssignment
+          centroids = updateCentroids(assignment)
+          println(assignment.mkString(","))
+        } else
+          done = true
       }
 
       if (outFile != null)
@@ -76,36 +78,34 @@ object CKMeans extends App {
     }
 
     def initialize(): Unit = {
-      plusplus
+      randomCentroids
       assignment = solver.assignmentStep(centroids, null)
       if (assignment == null)
         unsatisfiable = true
-      else {
-        updateStep
-      }
-      println(assignment.mkString(","))
+      else
+        centroids = updateCentroids(assignment)
     }
 
-    def updateStep(): Unit = {
+    def updateCentroids(a: Array[Int]): Array[Array[Double]] = {
+      val newCentroids = Array.ofDim[Double](k, m)
+
       for (i <- 0 until k)
         for (j <- 0 until m)
-          centroids(i)(j) = 0;
+          newCentroids(i)(j) = 0;
 
       val clustSize = Array.ofDim[Int](k)
 
       for (i <- 0 until n) {
-        clustSize(assignment(i)) += 1
+        clustSize(a(i)) += 1
         for (j <- 0 until m)
-          centroids(assignment(i))(j) += points(i)(j);
+          newCentroids(a(i))(j) += points(i)(j);
       }
 
       for (i <- 0 until k)
         for (j <- 0 until m)
-          centroids(i)(j) /= clustSize(i);
+          newCentroids(i)(j) /= clustSize(i);
 
-      WCSS = 0
-      for (i <- 0 until m)
-        WCSS += l2Distance(points(i), centroids(assignment(i)));
+      newCentroids
     }
 
   }
@@ -117,6 +117,14 @@ object CKMeans extends App {
     for (i <- 0 until x.length)
       dist += Math.pow(x(i) - y(i), 2)
     dist
+  }
+
+  def randomCentroids(): Unit = {
+    centroids = Array.ofDim[Double](k, m)
+    val selectedPoints = Random.shuffle(points.toList).take(k)
+    for (i <- 0 until k)
+      for (j <- 0 until m)
+        centroids(i)(j) = selectedPoints(i)(j)
   }
 
   def plusplus(): Unit = {
@@ -132,7 +140,7 @@ object CKMeans extends App {
         choose = gen.nextInt(n)
       else {
         for (p <- 0 until k) {
-          val tempDistance = l2Distance(points(p), centroids(c - 1)); 
+          val tempDistance = l2Distance(points(p), centroids(c - 1));
           if (c == 1)
             distToClosestCentroid(p) = tempDistance
           else { // c != 1
@@ -149,8 +157,8 @@ object CKMeans extends App {
         var j: Int = n
         while (choose == 0 && j > 0) {
           if (rand > weightedDistribution(j - 1) / weightedDistribution(n - 1)) {
-            choose = j; 
-          } else 
+            choose = j;
+          } else
             choose = 0;
           j -= 1
         }
