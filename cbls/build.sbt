@@ -6,7 +6,7 @@ lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
       scalaVersion := "2.12.5",
-      version      := "0.1"
+      version      := "0.5"
     )),
     name := "CKmeans-CLBS",
     javaOptions += "-Xmx8G",
