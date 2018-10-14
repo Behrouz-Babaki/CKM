@@ -44,7 +44,7 @@ class AssignmentSolver(
 
     verbprint(1, "solving the assignment problem using local search")
     val CblsSolver = new CblsAssignmentSolver(n, k, weightsInt,
-      minClusterSize, maxClusterSize, minWeightInt, maxWeightInt, verbosity)
+      minClusterSize, maxClusterSize, minWeightInt, maxWeightInt, false, verbosity)
 
     var currentAssignments: Array[Int] = null
     val cblsAssignments = CblsSolver.solve(distancesInt, previousAssignments)
@@ -60,16 +60,25 @@ class AssignmentSolver(
       currentAssignments = cblsAssignments
       verbprint(1, "using the solution found by local search")
     } else {
-      if (currentAssignments != null)
+
+      if (cblsAssignments != null) {
         verbprint(1, "the solution found by local search does not improve the clustering quality")
-      verbprint(1, "solving the assignment problem using the mip solver")
-      val mipSolver = new MipAssignmentSolver(n, k, weights,
-        minClusterSize, maxClusterSize, minClusterWeight, maxClusterWeight)
-      val mipAssignments = mipSolver.solve(distances, previousAssignments)
-      if (improvedQuality(mipAssignments)) {
-        currentAssignments = mipAssignments
-        verbprint(1, "using a solution found by the mip solver")
+        verbprint(2, "distances:\n" + distances.deep.mkString(",") + "\nint distances:\n" +
+          distancesInt.deep.mkString(",") + "\nassignments:\n" + cblsAssignments.deep.mkString(",")
+          + "\nprevious assignments:\n" + previousAssignments.deep.mkString(",") + "\n")
       }
+
+      verbprint(1, "trying to solve the assignment problem for the second time")
+
+      val SecondCblsSolver = new CblsAssignmentSolver(n, k, weightsInt,
+        minClusterSize, maxClusterSize, minWeightInt, maxWeightInt, true, verbosity)
+      val secondCblsAssignments = SecondCblsSolver.solve(distancesInt, previousAssignments)
+
+      if (improvedQuality(secondCblsAssignments)) {
+        currentAssignments = secondCblsAssignments
+        verbprint(1, "using a solution found in the second attempt")
+      }
+
     }
 
     currentAssignments

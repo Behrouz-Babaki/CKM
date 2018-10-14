@@ -1,11 +1,11 @@
 package scopt
 
 object Run extends App {
-  val tString = "--data-file ../data/players.data --k 3 --weight-file ../data/players.weights --min-weight -10 --max-weight 1000 --verbosity 1"
+  val tString = "--data-file ../data/players.csv --csv-format --k 3 --weight-file ../data/players.weights --min-weight -10 --max-weight 1000 --output-file ../data/players.out --verbosity 2"
   val tArgs = tString.split("\\s+")
-  val tSmall = "--data-file ../data/small.data --k 5 --weight-file ../data/small.weights --min-weight -5 --max-weight 5 --min-size 2 --verbosity 1".split("\\s+")
-  val tMedium = "--data-file ../data/medium.data --k 15 --weight-file ../data/medium.weights --min-weight -5 --max-weight 5 --min-size 2 --verbosity 1".split("\\s+")
-  val tLarge = "--data-file ../data/large.data --k 30 --weight-file ../data/large.weights --min-weight -5 --max-weight 5 --min-size 2 --verbosity 1".split("\\s+")
+  val tSmall = "--data-file ../data/small.data --k 5 --weight-file ../data/small.weights --min-weight -5 --max-weight 5 --min-size 2 --output-file ../data/small.out --verbosity 2".split("\\s+")
+  val tMedium = "--data-file ../data/medium.data --k 15 --weight-file ../data/medium.weights --min-weight -5 --max-weight 5 --min-size 2 --output-file ../data/medium.out --verbosity 2".split("\\s+")
+  val tLarge = "--data-file ../data/large.data --k 30 --weight-file ../data/large.weights --min-weight -5 --max-weight 5 --min-size 2 --output-file ../data/large.out --verbosity 2".split("\\s+")
 
   try {
 

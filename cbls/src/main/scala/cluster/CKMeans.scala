@@ -4,6 +4,7 @@ import assignment.AssignmentSolver
 import scala.util.Random
 import java.io.File
 import oscar.util.OutFile
+import java.io.PrintWriter
 
 object CKMeans extends App {
 
@@ -18,8 +19,8 @@ object CKMeans extends App {
   var bestCentroids = Array.ofDim[Double](k, m)
   var bestAssignment = Array.ofDim[Int](n)
   var verbosity: Int = 0
-  
-  def verbprint(i: Int, j: Any) = {if (this.verbosity >= i) println(j)}
+
+  def verbprint(i: Int, j: Any) = { if (this.verbosity >= i) println(j) }
 
   def cluster(
     _points:   Array[Array[Double]],
@@ -79,7 +80,7 @@ object CKMeans extends App {
       }
 
       if (outFile != null)
-        printResults(outFile)
+        printResults(outFile, unsatisfiable)
     }
 
     def initialize(): Unit = {
@@ -88,9 +89,8 @@ object CKMeans extends App {
       assignment = solver.assignmentStep(centroids, null)
       if (assignment == null) {
         unsatisfiable = true
-        verbprint(1, "This problem is unsatisfiable!")
-      }
-      else
+        verbprint(1, "No clustering was found!")
+      } else
         centroids = updateCentroids(assignment)
     }
 
@@ -178,8 +178,14 @@ object CKMeans extends App {
     }
   }
 
-  def printResults(outFile: File): Unit = {
-    CsvIo.write(outFile.getAbsolutePath, assignment)
+  def printResults(outFile: File, infeasible: Boolean): Unit = {
+    if (infeasible) {
+      val pw = new PrintWriter(outFile.getAbsoluteFile)
+      pw.write("No clustering was found\n")
+      pw.close
+    } else {
+      CsvIo.write(outFile.getAbsolutePath, assignment)
+    }
   }
 
 }

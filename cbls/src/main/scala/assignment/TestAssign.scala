@@ -22,17 +22,6 @@ object TestAssign extends App {
     if (result != null)
       println(result.mkString(","))
 
-    if (result == null) {
-      val mipSolver = new MipAssignmentSolver(n, k, weights.map(_.toDouble),
-        minClusterSize, maxClusterSize,
-        minClusterWeight, maxClusterWeight);
-      val mipResult = mipSolver.solve(distances.map(_.map(_.toDouble)), null)
-
-      if (mipResult != null)
-        println(mipResult.mkString(","))
-      else
-        print("UNSAT")
-    }
   }
 }
 

@@ -8,7 +8,7 @@ import oscar.cbls.core.computation.CBLSIntVar
 class CblsAssignmentSolver(n: Int, k: Int, weights: Array[Int],
                            minClusterSize: Int, maxClusterSize: Int,
                            minClusterWeight: Int, maxClusterWeight: Int,
-                           verbosity: Int = 0) extends CBLSModel {
+                           intense: Boolean = false, verbosity: Int = 0) extends CBLSModel {
 
   def solve(distances: Array[Array[Int]], previousAssignments: Array[Int]): Array[Int] = {
 
@@ -45,12 +45,17 @@ class CblsAssignmentSolver(n: Int, k: Int, weights: Array[Int],
     val sumOfDistances = sum(distanceToSelectedCenters)
     val obj = Objective(sum2(penalty, sumOfDistances))
 
+    val refreshRate = if (intense) 2 else 5
+    val numRepeat = if (intense) 50 else 10
+
     val neighborhood = (
       bestSlopeFirst(
         List(
           assignNeighborhood(assignmentVariables, "SwitchDataPoints"),
-          swapsNeighborhood(assignmentVariables, "SwapDataPoints")), refresh = n / 5)
-        onExhaustRestartAfter (randomizeNeighborhood(assignmentVariables, () => n / 5), 10, obj))
+          swapsNeighborhood(assignmentVariables, "SwapDataPoints")), refresh = n / refreshRate)
+        onExhaustRestartAfter (
+          randomizeNeighborhood(assignmentVariables, () => n / refreshRate),
+          numRepeat, obj))
 
     s.close()
 
@@ -59,8 +64,8 @@ class CblsAssignmentSolver(n: Int, k: Int, weights: Array[Int],
     val assignments = Array.tabulate(n)(l => assignmentVariables(l).value)
     val violation = c.violation.value
 
-    val result: Array[Int] = {if (violation == 0) assignments else null}
-    
+    val result: Array[Int] = { if (violation == 0) assignments else null }
+
     result
   }
 

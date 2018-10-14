@@ -6,9 +6,9 @@ lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
       scalaVersion := "2.12.5",
-      version      := "0.5"
+      version      := "0.6"
     )),
-    name := "CKmeans-CLBS",
+    name := "CKmeans-CBLS",
     javaOptions += "-Xmx8G",
     resolvers += "Oscar Snapshots" at "http://artifactory.info.ucl.ac.be/artifactory/libs-snapshot-local/",
     resolvers += Resolver.sonatypeRepo("public"),

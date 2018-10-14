@@ -4,18 +4,19 @@ import java.io.File
 import assignment._
 
 case class Config(
-  dataFile:      File   = new File("."),
-  weightFile:    File   = new File("."),
-  k:             Int    = -1,
-  minWeight:     Double = Double.NegativeInfinity,
-  maxWeight:     Double = Double.PositiveInfinity,
-  numRepeats:    Int    = 1,
-  maxIterations: Int    = 999,
-  epsilon:       Double = 1e-3,
-  minSize:       Int    = -1,
-  maxSize:       Int    = Int.MaxValue,
-  outputFile:    File   = new File("."),
-  verbosity:     Int    = 0)
+  dataFile:      File    = null,
+  weightFile:    File    = null,
+  k:             Int     = -1,
+  minWeight:     Double  = Double.NegativeInfinity,
+  maxWeight:     Double  = Double.PositiveInfinity,
+  numRepeats:    Int     = 1,
+  maxIterations: Int     = 999,
+  epsilon:       Double  = 1e-3,
+  minSize:       Int     = -1,
+  maxSize:       Int     = Int.MaxValue,
+  outputFile:    File    = null,
+  csvFormat:     Boolean = false,
+  verbosity:     Int     = 0)
 
 object Runner extends App {
 
@@ -27,13 +28,13 @@ object Runner extends App {
         " and " + config.weightFile.getAbsolutePath)
 
       // read the data and weights
-      val points = CsvIo.read(config.dataFile)
-      val weights = CsvIo.flatten(CsvIo.read(config.weightFile))
-      
-      val minSize = {if (config.minSize >= 0) config.minSize else 0}
-      val maxSize = {if (config.minSize < Int.MaxValue) config.maxSize else points.length}
-      val minWeight = {if (config.minWeight != Double.NegativeInfinity) config.minWeight else weights.filter(_ < 0).reduce(_ + _)}
-      val maxWeight = {if (config.maxWeight != Double.PositiveInfinity) config.maxWeight else weights.filter(_ > 0).reduce(_ + _)}
+      val points = CsvIo.read(config.dataFile, config.csvFormat)
+      val weights = CsvIo.flatten(CsvIo.read(config.weightFile, config.csvFormat))
+
+      val minSize = { if (config.minSize >= 0) config.minSize else 0 }
+      val maxSize = { if (config.minSize < Int.MaxValue) config.maxSize else points.length }
+      val minWeight = { if (config.minWeight != Double.NegativeInfinity) config.minWeight else weights.filter(_ < 0).reduce(_ + _) }
+      val maxWeight = { if (config.maxWeight != Double.PositiveInfinity) config.maxWeight else weights.filter(_ > 0).reduce(_ + _) }
 
       // run K-means
       val startTime = System.currentTimeMillis
@@ -113,6 +114,10 @@ object Runner extends App {
       } validate { x =>
         if (x.exists() || x.createNewFile()) success else failure("<OUTFILE> can not be created")
       } text ("store the result in OUTFILE")
+
+      opt[Unit]("csv-format") optional () action {
+        (_, c) => c.copy(csvFormat = true)
+      } text ("accept comma-separated input")
 
       opt[Int]("verbosity") optional () valueName ("<VERBOSITY>") action { (x, c) =>
         c.copy(verbosity = x)

@@ -19,7 +19,7 @@ public class CsvIo {
 	/**
 	 * Reads double[][] from csv file
 	 */
-	public static double[][] read(File inFile) {
+	public static double[][] read(File inFile, boolean isCsv) {
 
 		BufferedReader bf = null;
 		ArrayList<ArrayList<Double>> data = new ArrayList<ArrayList<Double>>();
@@ -32,7 +32,8 @@ public class CsvIo {
 			bf = new BufferedReader(new FileReader(inFile));
 
 			while ((line = bf.readLine()) != null) {
-				String[] x = line.split("\\s");
+				String delimiter = isCsv ? "," : "\\s";
+				String[] x = line.split(delimiter);
 				if (first) {
 					columns = x.length;
 					first = false;
