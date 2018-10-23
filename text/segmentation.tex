@@ -1,0 +1,82 @@
+\documentclass{scrartcl}
+
+\usepackage{parskip}
+\usepackage{a4wide}
+\usepackage{amsmath,amsfonts}
+
+\usepackage{multicol}
+\setlength{\columnsep}{1cm}
+
+\title{Enhancing scalability of Peer-to-Peer energy markets using adaptive segmentation method}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+%\begin{multicols*}{2}
+
+\ldots
+
+\section*{Market clearing method}
+
+\ldots	
+
+\subsection*{Segmentation}
+
+Market segmentation is one of the most fundamental
+strategic marketing concepts, which can be used to group
+players according to their similarity in several dimensions
+related to a product under consideration. Segmenting a
+market means dividing its potential consumers into separate
+sub-sets where players in the same group are similar with
+respect to a given set of characteristics. Cluster analysis
+allows reducing the number of observations, by grouping
+them into homogeneous clusters.
+
+In the P2P energy trading, as there are a large number of
+players, market segmentation can be used to divide market
+to several segment, where in each segment only a few
+players with similar features negotiate for energy trading.
+In this paper, an adaptive segmentation method is proposed
+to divide a large scale market into several subgroups, where
+two important characteristics are considered to form
+segments; capacity (to secure trading amount), and price (to
+improve/minimize utility/cost). 
+For each player $i$ a bid
+vector $\omega_i$ is submitted to the market.
+\begin{equation}
+	\omega_i = \{ \bar{X_i}, \gamma_i \}
+\end{equation}
+where, $\bar{X_i}$ and $\gamma_i$ are maximum power and its
+corresponding price for player $i$ which indicates a point
+of marginal cost/benefit curve of player. A set of $N_s$
+segments is generated before segmentation and players will
+be clustered in these typical segments separately. Historical
+data can be used to set initial segments. Determining the
+number of segments without prior information is a non-trivial and computationally expensive problem. The
+segmentation method used in this paper is distance-based,
+where market players are assigned to the different segments
+$j \in \{1, \ldots, N_s\}$ . It should be noted that in each segment the total
+demand and supply should be balanced and this constraint
+need to be taken in account during the segmentation.
+
+After assigning players to different segments, at the first
+step centroid of each segment is calculated by averaging parameters of all members in each segment. The centroid
+of segment jj is presented by (2)
+
+Then, distance of all players with centroids is calculated
+and stored in a distance matrix. Distance parameter is
+obtained as
+
+where, ζζ xx , ζζ λλ are scaling factors. The distance matrix can
+be obtained by
+An allocation vector specifying to which typical segment
+each player is assigned to is generated using
+
+These steps will repeat until there is no more new
+assignment.
+
+%\end{multicols*}
+\end{document}
