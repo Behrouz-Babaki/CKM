@@ -3,6 +3,7 @@
 \usepackage{parskip}
 \usepackage{a4wide}
 \usepackage{amsmath,amsfonts}
+\usepackage{todonotes}
 
 \usepackage{multicol}
 \setlength{\columnsep}{1cm}
@@ -15,7 +16,7 @@
 
 \maketitle
 
-%\begin{multicols*}{2}
+\begin{multicols*}{2}
 
 \ldots
 
@@ -58,25 +59,53 @@ data can be used to set initial segments. Determining the
 number of segments without prior information is a non-trivial and computationally expensive problem. The
 segmentation method used in this paper is distance-based,
 where market players are assigned to the different segments
-$j \in \{1, \ldots, N_s\}$ . It should be noted that in each segment the total
+$j \in \{1, \ldots, N_s\}$. This problem can be formulated as follows:
+
+\begin{align}
+\min_{\mathbf{y}} & \sum_{i=1}^{n} \sum_{j=1}^{k} y_{ij} \big[ (\bar{X_i} - x_j)^2 + (\gamma_i - \lambda_j)^2 \big] \nonumber \\
+\text{s.t.} & \nonumber \\
+& \sum_{j=1}^k y_{ij} = 1 \qquad \forall i \\
+& x_j = \frac{\sum_{i=1}^{n} y_{ij} \bar{X_i}}{\sum_{i=1}^{n} y_{ij}}  \qquad \forall j \label{cons:centroid1}\\
+& \lambda_j = \frac{\sum_{i=1}^{n} y_{ij} \gamma_i}{\sum_{i=1}^{n} y_{ij}} \qquad \forall j \label{cons:centroid2}\\
+& x_{ij} \in \{0, 1\} \qquad \forall i, j \nonumber
+\end{align}
+
+It is known that removing constraints~\ref{cons:centroid1} and~\ref{cons:centroid2} does not change the optimal solution of this problem. In other words, for each possible grouping of points to clusters, if we can freely choose the cluster centers to minimize the total distance of points to these centers, the optimal centers will be located at the centroids of clusters~\cite{AloiseHL12}.\todo[inline]{rework the previous sentence}  
+
+Solving this nonlinear problem to optimality is computationally intensive~\cite{AloiseDHP09}. The poplular \emph{KMeans} algorithm provides an approximate solution to this problem through a sequence of iterations, as follows: 
+
+\begin{enumerate}
+\item Assign values to $x_j$ and $\lambda_j$ variables. 
+\item Fix the values of $x_j$ and $\lambda_j$ variables and solve  for $y_{ij}$ variables.
+\item Fix the $y_{ij}$ variables and solve for $x_j$ and $\lambda_j$ variables.
+\end{enumerate}
+
+The iteration between steps 2 and 3 of this algorithm continues until convergence, that is, until the clustering obtained in step 2 does not change in two consecutive iterations. A notable advantage of KMeans algorithm is that the subproblems of steps 2 and 3 have closed-form solutions. Given a fixed set of centers, the optimal assignment is obtained by assigning each point to the closest center. As stated before, the optimal centers for each given clustering are located at the centroids of the clusters. 
+
+It should be noted that in each segment the total
 demand and supply should be balanced and this constraint
-need to be taken in account during the segmentation.
+need to be taken in account during the segmentation. Let us denote the supply of player $i$ by $x_i$. If player $i$ is a buyer, $x_i$ is a negative number and represents its demand. Our goal is to solve the clustering problem subject to these extra constraints:
 
-After assigning players to different segments, at the first
-step centroid of each segment is calculated by averaging parameters of all members in each segment. The centroid
-of segment jj is presented by (2)
+\begin{equation}
+	\underline{\theta} \leq \sum_{i=1}^{n} y_{ij} x_i \leq \bar{\theta} \qquad \forall j 
+\end{equation}
 
-Then, distance of all players with centroids is calculated
-and stored in a distance matrix. Distance parameter is
-obtained as
+where $\underline{\theta}$ and $\bar{theta}$ represent the bounds on degree of imbalance in each cluster. This problem can be solved using the same approach as KMeans, except that the subproblem of step 2 changes into the following problem:
 
-where, ζζ xx , ζζ λλ are scaling factors. The distance matrix can
-be obtained by
-An allocation vector specifying to which typical segment
-each player is assigned to is generated using
+\begin{align*}
+\min_{\mathbf{y}} & \sum_{i=1}^{n} \sum_{j=1}^{k} y_{ij} \big[ (\bar{X_i} - \hat{x_j})^2 + (\gamma_i - \hat{\lambda_j})^2 \big] \\
+\text{s.t.} & \\
+& \sum_{j=1}^k y_{ij} = 1 \qquad \forall i \\
+& \underline{\theta} \leq \sum_{i=1}^{n} y_{ij} x_i \leq \bar{\theta} \qquad \forall j \\
+& x_{ij} \in \{0, 1\} \qquad \forall i, j
+\end{align*}
 
-These steps will repeat until there is no more new
-assignment.
+where constants $\hat{x_j}$ and $\hat{\lambda_j}$ represent the centroids computed in previous steps of the algorithm.
 
-%\end{multicols*}
+This problem is an integer linear program which can be solved using available solvers. However, the cost of solving an integer program at each iteration of the algorithm can be prohibitive. An alternative method is to use a local search method for solving this problem.  
+ 
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{multicols*}
 \end{document}
