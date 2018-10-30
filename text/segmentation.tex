@@ -3,6 +3,10 @@
 \usepackage{parskip}
 \usepackage{a4wide}
 \usepackage{amsmath,amsfonts}
+
+\usepackage{amsthm}
+\newtheorem{theorem}{Theorem}
+
 \usepackage{todonotes}
 
 \usepackage{multicol}
@@ -62,12 +66,12 @@ where market players are assigned to the different segments
 $j \in \{1, \ldots, N_s\}$. This problem can be formulated as follows:
 
 \begin{align}
-\min_{\mathbf{y}} & \sum_{i=1}^{n} \sum_{j=1}^{k} y_{ij} \big[ (\bar{X_i} - x_j)^2 + (\gamma_i - \lambda_j)^2 \big] \nonumber \\
+\min_{\mathbf{y, x, \gamma}} & \sum_{i=1}^{n} \sum_{j=1}^{k} y_{ij} \big[ (\bar{X_i} - x_j)^2 + (\gamma_i - \lambda_j)^2 \big] \nonumber \\
 \text{s.t.} & \nonumber \\
 & \sum_{j=1}^k y_{ij} = 1 \qquad \forall i \\
 & x_j = \frac{\sum_{i=1}^{n} y_{ij} \bar{X_i}}{\sum_{i=1}^{n} y_{ij}}  \qquad \forall j \label{cons:centroid1}\\
 & \lambda_j = \frac{\sum_{i=1}^{n} y_{ij} \gamma_i}{\sum_{i=1}^{n} y_{ij}} \qquad \forall j \label{cons:centroid2}\\
-& x_{ij} \in \{0, 1\} \qquad \forall i, j \nonumber
+& y_{ij} \in \{0, 1\} \qquad \forall i, j \nonumber
 \end{align}
 
 It is known that removing constraints~\ref{cons:centroid1} and~\ref{cons:centroid2} does not change the optimal solution of this problem. In other words, for each possible grouping of points to clusters, if we can freely choose the cluster centers to minimize the total distance of points to these centers, the optimal centers will be located at the centroids of clusters~\cite{AloiseHL12}.\todo[inline]{rework the previous sentence}  
@@ -84,25 +88,38 @@ The iteration between steps 2 and 3 of this algorithm continues until convergenc
 
 It should be noted that in each segment the total
 demand and supply should be balanced and this constraint
-need to be taken in account during the segmentation. Let us denote the supply of player $i$ by $x_i$. If player $i$ is a buyer, $x_i$ is a negative number and represents its demand. Our goal is to solve the clustering problem subject to these extra constraints:
+need to be taken in account during the segmentation. Let us denote the supply of player $i$ by constant $\mathrm{x_i}$. If player $i$ is a buyer, $\mathrm{x_i}$ is a negative number and represents its demand. Our goal is to solve the clustering problem subject to these extra constraints:
 
 \begin{equation}
 	\underline{\theta} \leq \sum_{i=1}^{n} y_{ij} x_i \leq \bar{\theta} \qquad \forall j 
 \end{equation}
 
-where $\underline{\theta}$ and $\bar{theta}$ represent the bounds on degree of imbalance in each cluster. This problem can be solved using the same approach as KMeans, except that the subproblem of step 2 changes into the following problem:
+where $\underline{\theta}$ and $\bar{\theta}$ represent the bounds on degree of imbalance in each cluster. This problem can be solved using the same approach as KMeans, except that the subproblem of step 2 changes into the following problem, which we call the \emph{balanced assignment problem}~(\textsc{bap}):
 
 \begin{align*}
-\min_{\mathbf{y}} & \sum_{i=1}^{n} \sum_{j=1}^{k} y_{ij} \big[ (\bar{X_i} - \hat{x_j})^2 + (\gamma_i - \hat{\lambda_j})^2 \big] \\
+\min_{\mathbf{y}} & \sum_{i=1}^{n} \sum_{j=1}^{k} \mathrm{c_{ij}} y_{ij}  \\
 \text{s.t.} & \\
 & \sum_{j=1}^k y_{ij} = 1 \qquad \forall i \\
-& \underline{\theta} \leq \sum_{i=1}^{n} y_{ij} x_i \leq \bar{\theta} \qquad \forall j \\
-& x_{ij} \in \{0, 1\} \qquad \forall i, j
+& \underline{\theta} \leq \sum_{i=1}^{n}  \mathrm{x_i} y_{ij} \leq \bar{\theta} \qquad \forall j \\
+& y_{ij} \in \{0, 1\} \qquad \forall i, j
 \end{align*}
 
-where constants $\hat{x_j}$ and $\hat{\lambda_j}$ represent the centroids computed in previous steps of the algorithm.
+where constant $\mathrm{c_{ij}}$ represents the distance between the bid vector of player $i$ and coordinates of the $j$-th centroid, as computed in the previous iteration of the algorithm.
 
-This problem is an integer linear program which can be solved using available solvers. However, the cost of solving an integer program at each iteration of the algorithm can be prohibitive. An alternative method is to use a local search method for solving this problem.  
+\begin{theorem}
+	\textsc{bap} is strongly NP-hard.
+\end{theorem}
+\begin{proof}
+	This complexity result is proved by a polynomial reduction from \textsc{3-Partition}, which is known to be NP-complete~\cite{GareyJ79}. 
+	
+	The \textsc{3-Partition} problem can be described as follows:
+	Given $B \in \mathbb{Z}^+$ and $3p$ elements with weights $w_i$ such that $B/4 \leq w_i \leq B/2$, can we partition these elements into $p$ sets such taht the sum of weights in each partition equals $B$? 
+
+	
+	We create an instance of \textsc{bap} from an instance of \textsc{3-Partition} by setting $\mathrm{c_{ij}}$ to 0, $\mathrm{x_i}$ to $w_i$, and both $\bar{\theta}$ and $\underline{\theta}$ to $B$. 
+\end{proof}
+
+We can solve \textsc{bap} as an integer linear programming problem using existing solvers. However, the cost of solving an integer program at each iteration of the algorithm can be prohibitive. An alternative method is to use a local search method for solving this problem.  
  
 \bibliographystyle{plain}
 \bibliography{references}
